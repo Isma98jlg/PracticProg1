@@ -1,0 +1,48 @@
+@model PlataformaCreditos.ViewModels.SolicitudRegistroViewModel
+@{
+    ViewData["Title"] = "Registrar Nueva Solicitud";
+}
+
+<h1>Registrar Nueva Solicitud de Crédito</h1>
+
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5>Información de la Solicitud</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            <div class="mb-3">
+                <label asp-for="MontoSolicitado" class="form-label">Monto Solicitado ($)</label>
+                <input asp-for="MontoSolicitado" type="number" class="form-control" step="0.01" min="0.01" />
+                <span asp-validation-for="MontoSolicitado" class="text-danger"></span>
+                <div class="form-text">Máximo permitido: 10x tus ingresos mensuales. Consulta el límite en tu perfil.</div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Motivo" class="form-label">Motivo de la Solicitud</label>
+                <textarea asp-for="Motivo" class="form-control" rows="4" maxlength="500"></textarea>
+                <span asp-validation-for="Motivo" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Registrar Solicitud</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
+        </form>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
