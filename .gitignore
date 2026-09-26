@@ -1,0 +1,39 @@
+# Exam document (not tracked)
+Examen_Parcial_2026-1_WebSocket_CloudMQ*.docx
+
+# Build & artifacts
+bin/
+obj/
+app.db
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Secrets & env
+appsettings*.json
+!appsettings.json
+!appsettings.Development.json
+*.secret
+
+# Logs
+*.log
+
+# Redis / CloudMQ
+!.env.example
+.env
+
+# Temp
+*.tmp
+*.bak
+
+# Test
+**/TestResults/
+
+# OS
+.DS_Store
+Thumbs.db
