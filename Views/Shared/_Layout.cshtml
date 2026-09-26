@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using PlataformaCreditos.Services
+@using PlataformaCreditos.Data
+@inject IRedisService RedisService
+@inject ApplicationDbContext DbContext
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -39,6 +43,25 @@
         </nav>
     </header>
     <div class="container">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var lastId = await RedisService.GetLastSolicitudIdAsync(userId);
+                if (lastId.HasValue)
+                {
+                    var solicitud = await DbContext.SolicitudesCredito.FindAsync(lastId.Value);
+                    if (solicitud != null)
+                    {
+                        <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+                            <a asp-action="Detail" asp-route-id="@solicitud.Id" class="alert-link">Ver última solicitud: @solicitud.MontoSolicitado.ToString("C")</a>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                }
+            }
+        }
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
