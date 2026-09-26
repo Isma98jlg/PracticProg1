@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: plataformacreditos
+    env: dotnet
+    plan: free
+    buildCommand: "dotnet build PlataformaCreditos/PlataformaCreditos.csproj"
+    startCommand: "dotnet PlataformaCreditos/bin/Debug/net10.0/PlataformaCreditos.dll"
+    envVars:
+      ASPNETCORE_ENVIRONMENT: "production"
+      ASPNETCORE_URLS: "http://0.0.0.0:${PORT}"
+      ConnectionStrings__DefaultConnection: "DataSource=app.db;Cache=Shared"
