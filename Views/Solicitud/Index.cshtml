@@ -1,0 +1,101 @@
+@model List<PlataformaCreditos.ViewModels.SolicitudListViewModel>
+@{
+    ViewData["Title"] = "Mis Solicitudes";
+    var filters = ViewBag.Filters as PlataformaCreditos.ViewModels.SolicitudFilterViewModel ?? new PlataformaCreditos.ViewModels.SolicitudFilterViewModel();
+}
+
+<h1>Mis Solicitudes</h1>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5>Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Estado</label>
+                <select name="Estado" class="form-select">
+                    <option value="Todos" selected="@(filters.Estado == null || filters.Estado == "Todos")">Todos</option>
+                    <option value="Pendiente" selected="@(filters.Estado == "Pendiente")">Pendiente</option>
+                    <option value="Aprobado" selected="@(filters.Estado == "Aprobado")">Aprobado</option>
+                    <option value="Rechazado" selected="@(filters.Estado == "Rechazado")">Rechazado</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Monto Mínimo</label>
+                <input type="number" name="MinMonto" class="form-control" value="@filters.MinMonto?.ToString() ?? """ step="0.01" min="0.01" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Monto Máximo</label>
+                <input type="number" name="MaxMonto" class="form-control" value="@filters.MaxMonto?.ToString() ?? """ step="0.01" min="0.01" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Fecha Inicio</label>
+                <input type="date" name="FechaInicio" class="form-control" value="@filters.FechaInicio?.ToString("yyyy-MM-dd") ?? """ />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Fecha Fin</label>
+                <input type="date" name="FechaFin" class="form-control" value="@filters.FechaFin?.ToString("yyyy-MM-dd") ?? """ />
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<a asp-action="Index" asp-controller="Home" class="btn btn-outline-secondary mb-3">Volver al Inicio</a>
+
+@if (Model.Any())
+{
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.MontoSolicitado.ToString("C")</td>
+                    <td>@item.FechaSolicitud.ToString("dd/MM/yyyy")</td>
+                    <td>
+                        <span class="badge bg-@item.EstadoLabel">@item.Estado</span>
+                    </td>
+                    <td>
+                        <a asp-action="Detail" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Ver Detalle</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">No se encontraron solicitudes con los filtros aplicados.</div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
