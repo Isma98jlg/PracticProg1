@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using PlataformaCreditos.Data;
+using PlataformaCreditos.Hubs;
 using PlataformaCreditos.Services;
 using StackExchange.Redis;
 
@@ -18,6 +20,9 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddRoles<IdentityRole>();
 builder.Services.AddControllersWithViews();
+
+// SignalR
+builder.Services.AddSignalR();
 
 // Redis services
 var redisConnectionString = builder.Configuration.GetSection("Redis").Get<RedisSettings>()?.ConnectionString ?? "localhost:6379";
@@ -60,4 +65,5 @@ app.MapControllerRoute(
     .WithStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
+app.MapHub<SolicitudesHub>("/hubs/solicitudes");
 app.Run();

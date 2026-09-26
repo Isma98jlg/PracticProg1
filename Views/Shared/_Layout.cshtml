@@ -8,7 +8,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - PlataformaCreditos</title>
-    <script type="importmap"></script>
+    <meta name="importmap" content="">
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        var _uid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(_uid))
+        {
+            <meta name="user-id" content="@_uid" />
+        }
+    }
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/PlataformaCreditos.styles.css" asp-append-version="true" />
@@ -81,6 +89,14 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <!-- SignalR client -->
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+    <!-- WebSocket hub client -->
+    <script src="~/js/solicitud-hub.js" asp-append-version="true"></script>
+    <!-- Connection status indicator -->
+    <div id="ws-status" class="position-fixed bottom-0 end-0 m-3" style="z-index: 5000;">
+        <span class="badge rounded-pill bg-secondary" id="ws-status-badge">⬤ WebSocket: Desconectado</span>
+    </div>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

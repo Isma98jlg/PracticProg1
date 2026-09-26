@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using PlataformaCreditos.Data;
+using PlataformaCreditos.Hubs;
 using PlataformaCreditos.Models;
+using PlataformaCreditos.Services;
 
 namespace PlataformaCreditos.Controllers;
 
@@ -12,11 +15,19 @@ public class AnalistaController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly IHubContext<SolicitudesHub> _hubContext;
+    private readonly IRedisService _redisService;
 
-    public AnalistaController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+    public AnalistaController(
+        ApplicationDbContext context,
+        UserManager<IdentityUser> userManager,
+        IHubContext<SolicitudesHub> hubContext,
+        IRedisService redisService)
     {
         _context = context;
         _userManager = userManager;
+        _hubContext = hubContext;
+        _redisService = redisService;
     }
 
     public async Task<IActionResult> Index()
@@ -68,25 +79,35 @@ public class AnalistaController : Controller
 
         if (solicitud == null) return NotFound();
 
-        // No aprobar si ya fue aprobada o rechazada
         if (solicitud.Estado != EstadoSolicitud.Pendiente)
         {
             TempData["Error"] = "Esta solicitud ya fue procesada.";
             return RedirectToAction("Index");
         }
 
-        // No aprobar si el monto excede 5 veces los ingresos
         var maxMonto = solicitud.Cliente.IngresosMensuales * 5;
         if (solicitud.MontoSolicitado > maxMonto)
         {
-            TempData["Error"] = $"No se puede aprobar: el monto ({solicitud.MontoSolicitado:C}) excede 5 veces los ingresos ({maxMonto:C}).";
+            TempData["Error"] = $"No se puede aprobar: el monto excede el límite.";
             return RedirectToAction("Detail", new { id });
         }
 
         solicitud.Estado = EstadoSolicitud.Aprobado;
         await _context.SaveChangesAsync();
 
-        TempData["Success"] = $"Solicitud #{solicitud.Id} aprobada exitosamente.";
+        // Invalidate Redis cache for this client's applications
+        await _redisService.RemoveCachedSolicitudesAsync($"solicitudes:{solicitud.ClienteId}");
+
+        // Emit WebSocket event to the client owner only
+        var cliente = solicitud.Cliente;
+        await _hubContext.Clients.Group(cliente.UsuarioId).SendAsync("SolicitudEstadoActualizado", new
+        {
+            SolicitudId = solicitud.Id,
+            Estado = solicitud.Estado.ToString(),
+            MotivoRechazo = solicitud.MotivoRechazo
+        });
+
+        TempData["Success"] = $"Solicitud #{solicitud.Id} aprobada.";
         return RedirectToAction("Index");
     }
 
@@ -100,14 +121,12 @@ public class AnalistaController : Controller
 
         if (solicitud == null) return NotFound();
 
-        // No rechazar si ya fue aprobada o rechazada
         if (solicitud.Estado != EstadoSolicitud.Pendiente)
         {
             TempData["Error"] = "Esta solicitud ya fue procesada.";
             return RedirectToAction("Index");
         }
 
-        // Motivo obligatorio en rechazo
         if (string.IsNullOrWhiteSpace(motivo))
         {
             TempData["Error"] = "El motivo de rechazo es obligatorio.";
@@ -117,6 +136,18 @@ public class AnalistaController : Controller
         solicitud.Estado = EstadoSolicitud.Rechazado;
         solicitud.MotivoRechazo = motivo;
         await _context.SaveChangesAsync();
+
+        // Invalidate Redis cache
+        await _redisService.RemoveCachedSolicitudesAsync($"solicitudes:{solicitud.ClienteId}");
+
+        // Emit WebSocket event to the client owner only
+        var cliente = solicitud.Cliente;
+        await _hubContext.Clients.Group(cliente.UsuarioId).SendAsync("SolicitudEstadoActualizado", new
+        {
+            SolicitudId = solicitud.Id,
+            Estado = solicitud.Estado.ToString(),
+            MotivoRechazo = solicitud.MotivoRechazo
+        });
 
         TempData["Success"] = $"Solicitud #{solicitud.Id} rechazada.";
         return RedirectToAction("Index");
